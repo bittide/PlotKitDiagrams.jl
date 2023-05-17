@@ -15,6 +15,10 @@
 
 module NodePaths
 
+using Cairo
+using ..PlotKitAxes: Drawable, draw, Point, Color, LineStyle, PlotKitAxes, line, AxisMap, interp
+
+export StraightPath, TriangularArrow
 
 ##############################################################################
 # local utils
@@ -27,13 +31,13 @@ polar(r, theta) = Point(r*cos(theta), r*sin(theta))
 
 abstract type Path end
 
-# straight path between two points
+# straight path through list of points
 # TODO: should have "closed" attribute
 Base.@kwdef mutable struct StraightPath <: Path
     arrows = ()
     nodes = ()
     linestyle = LineStyle(Color(:black), 1)
-    points = nothing
+    points = Point[]
 end
 
 # curved path between two points
@@ -60,8 +64,8 @@ end
 Path(args...; kw...) = StraightPath(args...; kw...)
 
 
-function CairoTools.draw(ctx, p1, p2, path::StraightPath)
-    line(ctx, p1, p2; linestyle = path.linestyle)
+function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
+    line(dw, path.points; linestyle = path.linestyle)
     for (alpha, node) in path.nodes
         x = interp(p1, p2, alpha)
         draw(ctx, x, node)
@@ -73,7 +77,7 @@ function CairoTools.draw(ctx, p1, p2, path::StraightPath)
     end
 end
 
-function CairoTools.draw(ctx, p1, p2, path::CurvedPath)
+function PlotKitAxes.draw(ctx, p1, p2, path::CurvedPath)
     bezier_points = curve_from_endpoints(p1, p2, path.theta1, path.theta2, path.curveparam)
     curve(ctx, bezier_points...;
           closed = path.closed, linestyle = path.linestyle,
@@ -88,7 +92,7 @@ function CairoTools.draw(ctx, p1, p2, path::CurvedPath)
     end
 end
 
-function CairoTools.draw(ctx, p0, p1, p2, p3, path::BezierPath)
+function PlotKitAxes.draw(ctx, p0, p1, p2, p3, path::BezierPath)
     curve(ctx, p0, p1, p2, p3;
           closed = path.closed, linestyle = path.linestyle,
           fillcolor = path.fillcolor)
@@ -134,14 +138,14 @@ end
 
 Node(args...; kw...) = CircularNode(args...; kw...)
 
-function CairoTools.draw(ctx::CairoContext, p::Point, node::CircularNode)
+function PlotKitAxes.draw(ctx::CairoContext, p::Point, node::CircularNode)
     circle(ctx, p, node.radius;
            linestyle = node.linestyle, fillcolor = node.fillcolor)
     text(ctx, p, node.fontsize, node.textcolor, node.text;
          horizontal = "center", vertical = "center")
 end
 
-function CairoTools.draw(ctx::CairoContext, p, node::RectangularNode)
+function PlotKitAxes.draw(ctx::CairoContext, p, node::RectangularNode)
     left, top, txtwidth, txtheight = get_text_info(ctx, node.fontsize, node.text)
     if isnothing(node.widthheight)
         w = txtwidth + 6
@@ -159,10 +163,42 @@ end
 
 
 
-CairoTools.draw(ctx::CairoContext, node::Node) = draw(ctx, node.center, node)
+PlotKitAxes.draw(ctx::CairoContext, node::Node) = draw(ctx, node.center, node)
 
 ##############################################################################
 # arrows
+
+"""
+    triangle(t)
+
+Return a triangle with half-angle t at the right-hand vertex.
+
+Returns a list of 3 vertices, (a,0,b). Here a and b are related by reflection about the x-axis.
+The angle between a and b is 2t.
+"""
+triangle(t) = Point[ (-cos(t), sin(t)), (0,0), (-cos(t), -sin(t))]
+
+
+"""
+    rotate(p, theta)
+
+Rotate a list of points p anticlockwise by theta about the origin, in x-right y-up coords.
+"""
+function rotate(p::Vector{Point}, theta::Number)
+    R = [cos(theta) -sin(theta); sin(theta) cos(theta)]
+    q = [R*x for x in p]
+    return q
+end
+
+"""
+    centerx(p)
+
+Translate a list of points p so that the mean is zero.
+"""
+function centerx(p::Vector{Point})
+    c = sum(p)/length(p)
+    return translate(p, -1 * c)
+end
 
 abstract type Arrow end
 
@@ -173,9 +209,11 @@ Base.@kwdef mutable struct TriangularArrow <: Arrow
     linestyle = nothing
 end
 
-function CairoTools.draw(ctx, x, dir, arrow::TriangularArrow)
+function PlotKitAxes.draw(ctx, x, dir, arrow::TriangularArrow)
     theta = atan(dir.y, dir.x)
-    polygon(ctx, x, theta, arrow.size, triangle(arrow.angle); fillcolor = arrow.fillcolor)
+    points = triangle(arrow.angle)
+    points = translate(arrow.size .* rotate(points, theta), x)
+    line(dw, points; closed = true, fillcolor = arrow.fillcolor)
 end
 
 Arrow(args...; kw...) = TriangularArrow(args...; kw...)
@@ -250,7 +288,7 @@ bezier2(args...) = bezier_point(args...), bezier_tangent(args...)
 
 
 
-function CairoTools.draw(ax::AxisMap, ctx::CairoContext, p, node::RectangularNode)
+function PlotKitAxes.draw(ax::AxisMap, ctx::CairoContext, p, node::RectangularNode)
     left, top, txtwidth, txtheight = get_text_info(ctx, node.fontsize, node.text)
     if isnothing(node.widthheight)
         w = txtwidth + 6
@@ -265,9 +303,9 @@ function CairoTools.draw(ax::AxisMap, ctx::CairoContext, p, node::RectangularNod
          horizontal = "center", vertical = "center")
 end
 
-CairoTools.draw(ax::AxisMap, ctx, obj::RectangularNode) = CairoTools.draw(ax, ctx, obj.center, obj)
+PlotKitAxes.draw(ax::AxisMap, ctx, obj::RectangularNode) = PlotKitAxes.draw(ax, ctx, obj.center, obj)
 
-function CairoTools.draw(ax::AxisMap, ctx::CairoContext, p::Point, node::CircularNode)
+function PlotKitAxes.draw(ax::AxisMap, ctx::CairoContext, p::Point, node::CircularNode)
     if node.unscaled
         r = node.radius
     else
@@ -279,8 +317,8 @@ function CairoTools.draw(ax::AxisMap, ctx::CairoContext, p::Point, node::Circula
          horizontal = "center", vertical = "center")
 end
 
-CairoTools.draw(ax::AxisMap, ctx, obj::CircularNode) = CairoTools.draw(ax, ctx, obj.center, obj)
-CairoTools.draw(ax::AxisMap, ctx, p, obj::Node) = CairoTools.draw(ctx, ax(p), obj)
+PlotKitAxes.draw(ax::AxisMap, ctx, obj::CircularNode) = PlotKitAxes.draw(ax, ctx, obj.center, obj)
+PlotKitAxes.draw(ax::AxisMap, ctx, p, obj::Node) = PlotKitAxes.draw(ctx, ax(p), obj)
 
 ##############################################################################
 # paths on axes
@@ -308,7 +346,7 @@ function lineinterpdirection(points, alpha)
     println("ERROR: cannot interpolate polyline")
 end
 
-function CairoTools.draw(ax::AxisMap, ctx, path::Path)
+function PlotKitAxes.draw(ax::AxisMap, ctx, path::Path)
     line(ax, ctx, path.points, ; linestyle = path.linestyle)
         for (alpha, node) in path.nodes
         x = lineinterp(path.points, alpha)
@@ -326,7 +364,7 @@ function CairoTools.draw(ax::AxisMap, ctx, path::Path)
     end
 end
 
-CairoTools.draw(ax::AxisMap, ctx, p, q, obj::Path) = CairoTools.draw(ctx, ax(p), ax(q), obj)
+PlotKitAxes.draw(ax::AxisMap, ctx, p, q, obj::Path) = draw(ctx, ax(p), ax(q), obj)
 
 ##############################################################################
 

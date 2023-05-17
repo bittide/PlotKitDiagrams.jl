@@ -21,7 +21,7 @@ module PlotKitDiagrams
 using PlotKitAxes
 
 include("nodepaths.jl")
-using NodePaths
+using .NodePaths
 
 #include("graphs.jl")
 #using .Graphs
@@ -36,8 +36,8 @@ function reexport(m)
     end
 end
 
-reexport(Graphs)
-reexport(GraphLayout)
+reexport(NodePaths)
+
 
 
 end
