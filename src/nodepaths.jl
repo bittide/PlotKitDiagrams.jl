@@ -15,6 +15,7 @@
 
 module NodePaths
 
+using LinearAlgebra
 using Cairo
 using ..PlotKitAxes: Drawable, draw, Point, Color, LineStyle, PlotKitAxes, line, AxisMap, interp
 
@@ -63,17 +64,48 @@ end
 
 Path(args...; kw...) = StraightPath(args...; kw...)
 
+function linelength(p)
+    if length(p)<2
+        return 0
+    end
+    d = 0.0
+    for i=1:length(p)-1
+        d += norm(p[i+1] - p[i])
+    end
+    return d
+end
+
+normalize(x) = x / norm(x)
+
+function findpointonline(p, alpha)
+    if alpha <= 0
+        return p[1],  normalize(p[2] - p[1])
+    end
+    if alpha >= 1
+        return p[end], normalize(p[end] - p[end-1])
+    end
+    totallength = linelength(p)
+    targetdistance = alpha * totallength
+    i = 1
+    dist_to_pi = 0
+    while targetdistance > dist_to_pi + norm(p[i+1] - p[i])
+        dist_to_pi += norm(p[i+1] - p[i])
+        i += 1
+    end
+    x =  interp(p[i], p[i+1], (targetdistance - dist_to_pi)/norm(p[i+1] - p[i]))
+    dir = normalize(p[i+1] - p[i])
+    return x, dir
+end
 
 function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
     line(dw, path.points; linestyle = path.linestyle)
     for (alpha, node) in path.nodes
-        x = interp(p1, p2, alpha)
-        draw(ctx, x, node)
+        x, dir = findpointonline(path.points, alpha)
+        draw(dw, x, node)
     end
     for (alpha, arrow) in path.arrows
-        x = interp(p1, p2, alpha)
-        dir = (x = p2.x-p1.x, y = p2.y-p1.y)
-        draw(ctx, x, dir, arrow)
+        x, dir  = findpointonline(path.points, alpha)
+        draw(dw, x, dir, arrow)
     end
 end
 
@@ -189,6 +221,7 @@ function rotate(p::Vector{Point}, theta::Number)
     q = [R*x for x in p]
     return q
 end
+translate(p::Vector{Point}, c::Point) = [a + c for a in p]
 
 """
     centerx(p)
@@ -205,11 +238,11 @@ abstract type Arrow end
 Base.@kwdef mutable struct TriangularArrow <: Arrow
     size = 10
     angle = pi/8
-    fillcolor = Color(:black)
+    fillcolor = Color(:red)
     linestyle = nothing
 end
 
-function PlotKitAxes.draw(ctx, x, dir, arrow::TriangularArrow)
+function PlotKitAxes.draw(dw::Drawable, x, dir, arrow::TriangularArrow)
     theta = atan(dir.y, dir.x)
     points = triangle(arrow.angle)
     points = translate(arrow.size .* rotate(points, theta), x)
