@@ -17,9 +17,9 @@ module NodePaths
 
 using LinearAlgebra
 using Cairo
-using ..PlotKitAxes: Drawable, draw, Point, Color, LineStyle, PlotKitAxes, line, AxisMap, interp
+using ..PlotKitAxes: AxisDrawable, Drawable, curve, draw, Point, Color, LineStyle, PlotKitAxes, line, AxisMap, interp, colormap
 
-export StraightPath, TriangularArrow
+export StraightPath, TriangularArrow, CurvedPath, BezierPath, CircularNode
 
 ##############################################################################
 # local utils
@@ -43,6 +43,8 @@ end
 
 # curved path between two points
 Base.@kwdef mutable struct CurvedPath <: Path
+    p1 = nothing
+    p2 = nothing
     closed = false
     fillcolor = (0,0,1)
     theta1 = -pi/6
@@ -55,6 +57,10 @@ end
 
 # curved path with four bezier points
 Base.@kwdef mutable struct BezierPath <: Path
+    p0 = nothing
+    p1 = nothing
+    p2 = nothing
+    p3 = nothing
     closed = false
     fillcolor = Color(:blue)
     nodes = ()
@@ -109,23 +115,25 @@ function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
     end
 end
 
-function PlotKitAxes.draw(ctx, p1, p2, path::CurvedPath)
-    bezier_points = curve_from_endpoints(p1, p2, path.theta1, path.theta2, path.curveparam)
-    curve(ctx, bezier_points...;
+function PlotKitAxes.draw(dw, path::CurvedPath)
+    bezier_points = curve_from_endpoints(path.p1, path.p2,
+                                         path.theta1, path.theta2, path.curveparam)
+    curve(dw, bezier_points...;
           closed = path.closed, linestyle = path.linestyle,
           fillcolor = path.fillcolor)
     for (alpha, node) in path.nodes
         x = bezier_point(alpha, bezier_points...)
-        draw(ctx, x, node)
+        draw(dw, x, node)
     end
    for (alpha, arrow) in path.arrows
         x, dir = bezier2(alpha, bezier_points...)
-        draw(ctx, x, dir, arrow)
+        draw(dw, x, dir, arrow)
     end
 end
 
-function PlotKitAxes.draw(ctx, p0, p1, p2, p3, path::BezierPath)
-    curve(ctx, p0, p1, p2, p3;
+function PlotKitAxes.draw(dw, path::BezierPath)
+    bezier_points = (path.p0, path.p1, path.p2, path.p3)
+    curve(dw, bezier_points...;
           closed = path.closed, linestyle = path.linestyle,
           fillcolor = path.fillcolor)
     for (alpha, node) in path.nodes
@@ -133,7 +141,7 @@ function PlotKitAxes.draw(ctx, p0, p1, p2, p3, path::BezierPath)
         draw(ctx, x, node)
     end
     for (alpha, arrow) in path.arrows
-        x, dir = bezier2(pos, p0, p1, p2, p3)
+        x, dir = bezier2(pos, bezier_points...)
         draw(ctx, x, dir, arrow)
     end
 end
@@ -153,8 +161,8 @@ Base.@kwdef mutable struct CircularNode <: Node
     fillcolor = colormap(3)
     linestyle = LineStyle(Color(:black), 1)
     radius = 9
+    scaletype = :x
     center = nothing
-    unscaled = true
 end
 
 Base.@kwdef mutable struct RectangularNode <: Node
@@ -163,7 +171,8 @@ Base.@kwdef mutable struct RectangularNode <: Node
     textcolor = Color(:black)
     fillcolor = Color(:white)  # can be nothing
     linestyle = nothing  # can be nothing
-    center = nothing
+    scaletype = :x
+    center = nothing  
     widthheight = nothing
 end
 
@@ -338,15 +347,11 @@ end
 
 PlotKitAxes.draw(ax::AxisMap, ctx, obj::RectangularNode) = PlotKitAxes.draw(ax, ctx, obj.center, obj)
 
-function PlotKitAxes.draw(ax::AxisMap, ctx::CairoContext, p::Point, node::CircularNode)
-    if node.unscaled
-        r = node.radius
-    else
-        r = ax.fx(node.radius) - ax.fx(0)
-    end
-    circle(ax, ctx, p, r;
+function PlotKitAxes.draw(ad::AxisDrawable, node::CircularNode)
+    circle(ad, node.center, node.radius; scaletype = node.scaletype, 
            linestyle = node.linestyle, fillcolor = node.fillcolor)
-    text(ax, ctx, p, node.fontsize, node.textcolor, node.text;
+    text(ad, node.center, node.fontsize, node.textcolor, node.text;
+         scaletype = node.scaletype, 
          horizontal = "center", vertical = "center")
 end
 
