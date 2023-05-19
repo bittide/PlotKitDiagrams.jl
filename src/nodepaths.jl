@@ -330,8 +330,9 @@ bezier2(args...) = bezier_point(args...), bezier_tangent(args...)
 
 
 
-function PlotKitAxes.draw(ax::AxisMap, ctx::CairoContext, p, node::RectangularNode)
-    left, top, txtwidth, txtheight = get_text_info(ctx, node.fontsize, node.text)
+function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
+    scalefactor = getscalefactor(ad; scaletype = node.scaletype)
+    left, top, txtwidth, txtheight = get_text_info(ad.ctx, scalefactor*node.fontsize, node.text)
     if isnothing(node.widthheight)
         w = txtwidth + 6
         h = txtheight + 6
@@ -345,8 +346,6 @@ function PlotKitAxes.draw(ax::AxisMap, ctx::CairoContext, p, node::RectangularNo
          horizontal = "center", vertical = "center")
 end
 
-PlotKitAxes.draw(ax::AxisMap, ctx, obj::RectangularNode) = PlotKitAxes.draw(ax, ctx, obj.center, obj)
-
 function PlotKitAxes.draw(ad::AxisDrawable, node::CircularNode)
     circle(ad, node.center, node.radius; scaletype = node.scaletype, 
            linestyle = node.linestyle, fillcolor = node.fillcolor)
@@ -355,8 +354,7 @@ function PlotKitAxes.draw(ad::AxisDrawable, node::CircularNode)
          horizontal = "center", vertical = "center")
 end
 
-PlotKitAxes.draw(ax::AxisMap, ctx, obj::CircularNode) = PlotKitAxes.draw(ax, ctx, obj.center, obj)
-PlotKitAxes.draw(ax::AxisMap, ctx, p, obj::Node) = PlotKitAxes.draw(ctx, ax(p), obj)
+
 
 ##############################################################################
 # paths on axes
