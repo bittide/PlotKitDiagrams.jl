@@ -14,6 +14,8 @@
 
 module Graphs
 
+using ..NodePaths: Node, Path
+using ..PlotKitAxes: AxisDrawable, Point, draw, drawaxis, drawbackground, setoptions!
 
 export Graph, drawgraph
 
@@ -26,21 +28,32 @@ Base.@kwdef mutable struct Graph
     paths = Path()
 end
 
-function drawgraph(ax, ctx, links, x, st)
+function drawgraph(ad::AxisDrawable, links, x, st)
     for (j, (src,dst)) in enumerate(links)
         path = getentry(st.paths, j)
-        draw(ax, ctx, x[src], x[dst], path)
+        path.points = [x[src], x[dst]]
+        draw(ad, path)
     end
     for i=1:length(x)
         node = getentry(st.nodes, i)
-        draw(ax, ctx, x[i], node)
+        node.center = x[i]
+        draw(ad, node)
     end
 end
 
 function drawgraph(links, x; kwargs...)
     graph = Graph()
     setoptions!(graph, "graph_", kwargs...)
-
+    for a in graph.nodes
+        if isnothing(a.radius)
+            a.radius = 0.15
+        end
+        if isnothing(a.fontsize)
+            a.fontsize = 0.1
+        end
+    end
+    
+    
     defaults = Dict(
         :axisstyle_drawaxisbackground => false,
         :axisstyle_drawxlabels => false,
@@ -51,16 +64,15 @@ function drawgraph(links, x; kwargs...)
         :rmargin => 0,
         :tmargin => 0,
         :bmargin => 0,
+        :axisstyle_fontsize => 3,
         :xdatamargin => 0.25,
         :ydatamargin => 0.25
     )
 
     ad = AxisDrawable(x; merge(defaults, kwargs)...)
-    rect(ad, Point(0,0), Point(d.width, d.height);
-         fillcolor = d.axis.windowbackgroundcolor)
-    drawgraph(ad.axis.ax, ctx, links, x, graph)
-    end
-    return d
+    drawaxis(ad)
+    drawgraph(ad, links, x, graph)
+    close(ad)
 end
 
 

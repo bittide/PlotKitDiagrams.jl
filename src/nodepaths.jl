@@ -17,9 +17,9 @@ module NodePaths
 
 using LinearAlgebra
 using Cairo
-using ..PlotKitAxes: AxisDrawable, Drawable, curve, draw, Point, Color, LineStyle, PlotKitAxes, line, AxisMap, interp, colormap
+using ..PlotKitAxes: AxisDrawable, AxisMap, Color, Drawable, LineStyle, PlotKitAxes, Point, colormap, curve, draw, get_text_info, getscalefactor, interp, line
 
-export StraightPath, TriangularArrow, CurvedPath, BezierPath, CircularNode
+export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, StraightPath, TriangularArrow
 
 ##############################################################################
 # local utils
@@ -43,8 +43,7 @@ end
 
 # curved path between two points
 Base.@kwdef mutable struct CurvedPath <: Path
-    p1 = nothing
-    p2 = nothing
+    points = Point[]
     closed = false
     fillcolor = (0,0,1)
     theta1 = -pi/6
@@ -57,10 +56,7 @@ end
 
 # curved path with four bezier points
 Base.@kwdef mutable struct BezierPath <: Path
-    p0 = nothing
-    p1 = nothing
-    p2 = nothing
-    p3 = nothing
+    points = Point[]
     closed = false
     fillcolor = Color(:blue)
     nodes = ()
@@ -107,7 +103,8 @@ function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
     line(dw, path.points; linestyle = path.linestyle)
     for (alpha, node) in path.nodes
         x, dir = findpointonline(path.points, alpha)
-        draw(dw, x, node)
+        node.center = x
+        draw(dw, node)
     end
     for (alpha, arrow) in path.arrows
         x, dir  = findpointonline(path.points, alpha)
@@ -116,29 +113,28 @@ function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
 end
 
 function PlotKitAxes.draw(dw, path::CurvedPath)
-    bezier_points = curve_from_endpoints(path.p1, path.p2,
+    bezier_points = curve_from_endpoints(path.points[1], path.points[2],
                                          path.theta1, path.theta2, path.curveparam)
     curve(dw, bezier_points...;
           closed = path.closed, linestyle = path.linestyle,
           fillcolor = path.fillcolor)
     for (alpha, node) in path.nodes
-        x = bezier_point(alpha, bezier_points...)
-        draw(dw, x, node)
+        node.center = bezier_point(alpha, bezier_points...)
+        draw(dw, node)
     end
    for (alpha, arrow) in path.arrows
-        x, dir = bezier2(alpha, bezier_points...)
-        draw(dw, x, dir, arrow)
+       x, dir = bezier2(alpha, bezier_points...)
+       draw(dw, x, dir, arrow)
     end
 end
 
 function PlotKitAxes.draw(dw, path::BezierPath)
-    bezier_points = (path.p0, path.p1, path.p2, path.p3)
-    curve(dw, bezier_points...;
+    curve(dw, path.points...;
           closed = path.closed, linestyle = path.linestyle,
           fillcolor = path.fillcolor)
     for (alpha, node) in path.nodes
-        x = bezier_point(alpha, bezier_points...)
-        draw(ctx, x, node)
+        node.center = bezier_point(alpha, bezier_points...)
+        draw(ctx, node)
     end
     for (alpha, arrow) in path.arrows
         x, dir = bezier2(pos, bezier_points...)
@@ -156,21 +152,21 @@ abstract type Node end
 
 Base.@kwdef mutable struct CircularNode <: Node
     text = ""
-    fontsize = 8
+    fontsize = nothing    # axis units
     textcolor = Color(:white)
     fillcolor = colormap(3)
     linestyle = LineStyle(Color(:black), 1)
-    radius = 9
+    radius = nothing # axis units
     scaletype = :x
     center = nothing
 end
 
 Base.@kwdef mutable struct RectangularNode <: Node
     text = ""
-    fontsize = 8
-    textcolor = Color(:black)
-    fillcolor = Color(:white)  # can be nothing
-    linestyle = nothing  # can be nothing
+    fontsize = nothing   # units are axis units
+    textcolor = Color(:white)
+    fillcolor = colormap(3)  # can be nothing
+    linestyle = LineStyle(Color(:black), 1)  # can be nothing
     scaletype = :x
     center = nothing  
     widthheight = nothing
@@ -179,32 +175,52 @@ end
 
 Node(args...; kw...) = CircularNode(args...; kw...)
 
-function PlotKitAxes.draw(ctx::CairoContext, p::Point, node::CircularNode)
-    circle(ctx, p, node.radius;
+
+##############################################################################
+
+function PlotKitAxes.draw(ad::AxisDrawable, node::CircularNode)
+    scalefactor = getscalefactor(ad; scaletype = node.scaletype)
+    if isnothing(node.radius)
+        radius = 9 / scalefactor  # aim for 9 pixel radius
+    else
+        radius = node.radius
+    end
+    if isnothing(node.fontsize)
+        fontsize = 0.88 * radius
+    else
+        fontsize = node.fontsize
+    end
+    circle(ad, node.center, radius; scaletype = node.scaletype, 
            linestyle = node.linestyle, fillcolor = node.fillcolor)
-    text(ctx, p, node.fontsize, node.textcolor, node.text;
+    text(ad, node.center, fontsize, node.textcolor, node.text;
+         scaletype = node.scaletype, 
          horizontal = "center", vertical = "center")
 end
 
-function PlotKitAxes.draw(ctx::CairoContext, p, node::RectangularNode)
-    left, top, txtwidth, txtheight = get_text_info(ctx, node.fontsize, node.text)
+function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
+    scalefactor = getscalefactor(ad; scaletype = node.scaletype)
+    leftpx, toppx, txtwidthpx, txtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, node.text)
+    println((;leftpx, toppx, txtwidthpx, txtheightpx))
     if isnothing(node.widthheight)
-        w = txtwidth + 6
-        h = txtheight + 6
+        Wleft, Wtop, Wtxtwidthpx, Wtxtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, "W")
+        w = (txtwidthpx + Wtxtwidthpx) / scalefactor
+        h = (txtheightpx + Wtxtheightpx / 2) / scalefactor
     else
         w = node.widthheight.x
         h = node.widthheight.y
     end
+    println((;w, h))
     T = [w 0 ; 0 h]
-    box = [T*a for a in Point[(1,0), (1,1), (0,1), (0,0)]]
-    polygon(ctx, p, 0, 1, box; center = true, node.linestyle, node.fillcolor)
-    text(ctx, p, node.fontsize, node.textcolor, node.text;
+    points = Point[(1,0), (1,1), (0,1), (0,0)]
+    points = centerx(points)
+    points = [T*a + node.center for a in points]
+    println((;points,))
+    line(ad, points; closed = true, linestyle = node.linestyle, fillcolor = node.fillcolor)
+    text(ad, node.center, node.fontsize, node.textcolor, node.text;
          horizontal = "center", vertical = "center")
 end
 
 
-
-PlotKitAxes.draw(ctx::CairoContext, node::Node) = draw(ctx, node.center, node)
 
 ##############################################################################
 # arrows
@@ -245,13 +261,14 @@ end
 abstract type Arrow end
 
 Base.@kwdef mutable struct TriangularArrow <: Arrow
-    size = 10
+    size = nothing
     angle = pi/8
-    fillcolor = Color(:red)
+    fillcolor = Color(:black)
     linestyle = nothing
 end
 
-function PlotKitAxes.draw(dw::Drawable, x, dir, arrow::TriangularArrow)
+# arrows are sized in axis units
+function PlotKitAxes.draw(dw::AxisDrawable, x, dir, arrow::TriangularArrow)
     theta = atan(dir.y, dir.x)
     points = triangle(arrow.angle)
     points = translate(arrow.size .* rotate(points, theta), x)
@@ -325,39 +342,10 @@ Return the position and tangent at position t along the bezier curve with contro
 """
 bezier2(args...) = bezier_point(args...), bezier_tangent(args...)
 
-##############################################################################
-# nodes on axes
-
-
-
-function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
-    scalefactor = getscalefactor(ad; scaletype = node.scaletype)
-    left, top, txtwidth, txtheight = get_text_info(ad.ctx, scalefactor*node.fontsize, node.text)
-    if isnothing(node.widthheight)
-        w = txtwidth + 6
-        h = txtheight + 6
-    else
-        w = node.widthheight.x
-        h = node.widthheight.y
-    end
-    box = [p + a for a in Point[(w/2,-h/2), (w/2,h/2), (-w/2,h/2), (-w/2,-h/2)]]
-    line(ax, ctx, box; closed=true, node.linestyle, node.fillcolor)
-    text(ax, ctx, p, node.fontsize, node.textcolor, node.text;
-         horizontal = "center", vertical = "center")
-end
-
-function PlotKitAxes.draw(ad::AxisDrawable, node::CircularNode)
-    circle(ad, node.center, node.radius; scaletype = node.scaletype, 
-           linestyle = node.linestyle, fillcolor = node.fillcolor)
-    text(ad, node.center, node.fontsize, node.textcolor, node.text;
-         scaletype = node.scaletype, 
-         horizontal = "center", vertical = "center")
-end
-
 
 
 ##############################################################################
-# paths on axes
+
 
 function lineinterp(points, alpha)
     if alpha == 0
@@ -382,25 +370,6 @@ function lineinterpdirection(points, alpha)
     println("ERROR: cannot interpolate polyline")
 end
 
-function PlotKitAxes.draw(ax::AxisMap, ctx, path::Path)
-    line(ax, ctx, path.points, ; linestyle = path.linestyle)
-        for (alpha, node) in path.nodes
-        x = lineinterp(path.points, alpha)
-        draw(ctx, ax(x), node)
-    end
-    for (alpha, arrow) in path.arrows
-        x = lineinterp(path.points, alpha)
-        dir = lineinterpdirection(path.points, alpha)
-        if ax.fy(1) < ax.fy(0)
-            dir2 = (x = dir.x, y = -dir.y)
-        else
-            dir2 = dir
-        end
-        draw(ctx, ax(x), dir2, arrow)
-    end
-end
-
-PlotKitAxes.draw(ax::AxisMap, ctx, p, q, obj::Path) = draw(ctx, ax(p), ax(q), obj)
 
 ##############################################################################
 
