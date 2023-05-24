@@ -40,11 +40,13 @@ function drawgraph(ad::AxisDrawable, links, x, st)
         draw(ad, node)
     end
 end
+makelist(a::Vector) = a
+makelist(a) = [a]
 
 function drawgraph(links, x; kwargs...)
     graph = Graph()
     setoptions!(graph, "graph_", kwargs...)
-    for a in graph.nodes
+    for a in makelist(graph.nodes)
         if isnothing(a.radius)
             a.radius = 0.15
         end

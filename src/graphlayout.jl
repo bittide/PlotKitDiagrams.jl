@@ -15,7 +15,8 @@
 
 module GraphLayout
 
-
+using ..PlotKitAxes: Point
+using LinearAlgebra
 
 export graphlayout, meshlayout
 

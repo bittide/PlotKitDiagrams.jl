@@ -26,8 +26,8 @@ using .NodePaths
 include("graphs.jl")
 using .Graphs
 
-#include("graphlayout.jl")
-#using .GraphLayout
+include("graphlayout.jl")
+using .GraphLayout
 
 ##############################################################################
 function reexport(m)
@@ -38,6 +38,7 @@ end
 
 reexport(NodePaths)
 reexport(Graphs)
+reexport(GraphLayout)
 
 
 
