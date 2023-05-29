@@ -74,7 +74,7 @@ function drawgraph(links, x; kwargs...)
     ad = AxisDrawable(x; merge(defaults, kwargs)...)
     drawaxis(ad)
     drawgraph(ad, links, x, graph)
-    close(ad)
+    return ad
 end
 
 
