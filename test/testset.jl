@@ -8,6 +8,7 @@ function main()
         @test main2()
         @test main3()
         @test main4()
+        @test main5()
     end
 end
 
@@ -58,17 +59,27 @@ function main4()
 end
 
 
-# beziers
-function main26()
-    d = Drawable(800, 600) do ctx
-        rect(ctx, Point(0,0), Point(800, 600); fillcolor = Color(:white))
-        bps = curve_from_endpoints(Point(100,100), Point(600,200), pi/6, pi/6, 0.3)
-        curve(ctx, bps...; linestyle = LineStyle( Color(:black), 2))
 
-        for i=0:0.1:0.5
-            p = bezier_point(i, bps...)
-            circle(ctx, p, 10;fillcolor = Color(:red))
-        end
-    end
-    qsave(d, "basic26.pdf")
-end
+# directed graph with labels
+function main5()
+    println("main5")
+    links = [[1, 2], [1, 4], [2, 3], [2, 5], [3, 6], [4, 5], [5, 6]]
+    x = Point[(0, -2), (1, 0), (2, -2), (0, 1), (1, 1), (2, 1)]
+    n = length(x)
+    m = length(links)
+  
+    graph_nodes = [Node(; text=string(i), fillcolor = Color(0,0,0.6)) for i=1:n]
+
+    arrows = ((0.8, TriangularArrow(; size = 0.15)),)
+    node(i) = (0.5, Node(; fillcolor = Color(:white),
+                         textcolor = Color(:black),
+                         linestyle = nothing,
+                         text=string(i)))
+    
+    graph_paths = [Path(; arrows, nodes = (node(i),)) for i=1:m]
+
+    ad = drawgraph(links, x; graph_nodes, graph_paths)
+    save(ad, plotpath("test_plotkitdiagrams_5.pdf"))
+    return true
+end   
+
