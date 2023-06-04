@@ -17,14 +17,9 @@ module NodePaths
 
 using LinearAlgebra
 using Cairo
-using ..PlotKitAxes: AxisDrawable, AxisMap, Color, Drawable, LineStyle, PlotKitAxes, Point, colormap, curve, draw, get_text_info, getscalefactor, interp, line
+using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent
 
 export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, StraightPath, TriangularArrow
-
-##############################################################################
-# local utils
-
-polar(r, theta) = Point(r*cos(theta), r*sin(theta))
 
 
 ##############################################################################
@@ -113,17 +108,14 @@ function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
 end
 
 function PlotKitAxes.draw(dw, path::CurvedPath)
-    bezier_points = curve_from_endpoints(path.points[1], path.points[2],
-                                         path.theta1, path.theta2, path.curveparam)
-    curve(dw, bezier_points...;
-          closed = path.closed, linestyle = path.linestyle,
-          fillcolor = path.fillcolor)
+    bezier = Bezier(path.points[1], path.points[2], path.theta1, path.theta2, path.curveparam)
+    curve(dw, bezier; closed = path.closed, linestyle = path.linestyle, fillcolor = path.fillcolor)
     for (alpha, node) in path.nodes
-        node.center = bezier_point(alpha, bezier_points...)
+        node.center = point(bezier, alpha)
         draw(dw, node)
     end
    for (alpha, arrow) in path.arrows
-       x, dir = bezier2(alpha, bezier_points...)
+       x, dir = point_and_tangent(bezier, alpha)
        draw(dw, x, dir, arrow)
     end
 end
