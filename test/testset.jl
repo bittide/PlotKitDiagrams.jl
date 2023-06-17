@@ -9,6 +9,8 @@ function main()
         @test main3()
         @test main4()
         @test main5()
+        @test main6()
+        @test main7()
     end
 end
 
@@ -83,3 +85,31 @@ function main5()
     return true
 end   
 
+# arrows on non-equal axes
+function main6()
+    println("main6")
+    ad = AxisDrawable(Point[(0,0),(20,3)])
+    drawaxis(ad)
+    setclipbox(ad)
+    line(ad, Point(0,0), Point(10,2); linestyle = LineStyle(Color(:red), 1))
+    p = Path(;points=[Point(4,1), Point(16,2)], arrows = ((0.5, TriangularArrow(;size = 0.4)),))
+    draw(ad, p)
+    save(ad, plotpath("test_plotkitdiagrams_6.pdf"))
+    return true
+end
+    
+
+# arrows on non-equal axes
+function main7()
+    println("main7")
+    ad = AxisDrawable(Point[(0,0),(20,3)];
+                      axisoptions_yoriginatbottom = false, axisstyle_xtickverticaloffset = -10)
+    drawaxis(ad)
+    setclipbox(ad)
+    line(ad, Point(0,0), Point(10,2); linestyle = LineStyle(Color(:red), 1))
+    p = Path(;points=[Point(4,1), Point(16,2)], arrows = ((0.5, TriangularArrow(;size = 0.4)),))
+    draw(ad, p)
+    save(ad, plotpath("test_plotkitdiagrams_7.pdf"))
+    return true
+end
+    

@@ -257,16 +257,31 @@ Base.@kwdef mutable struct TriangularArrow <: Arrow
     angle = pi/8
     fillcolor = Color(:black)
     linestyle = nothing
+    scaletype = :x
 end
 
 # arrows are sized in axis units
-function PlotKitAxes.draw(dw::AxisDrawable, x, dir, arrow::TriangularArrow)
+# x, dir are in axis units too
+function PlotKitAxes.draw(ad::AxisDrawable, x, dir, arrow::TriangularArrow)
+    # convert to pixels
+    x_raw = ad.axis.ax(x)
+    dir_raw = ad.axis.ax(dir) - ad.axis.ax(Point(0,0))
+    scalefactor = getscalefactor(ad; scaletype = arrow.scaletype)
+    arrow2 = TriangularArrow(arrow.size * scalefactor, arrow.angle, arrow.fillcolor, arrow.linestyle, arrow.scaletype)
+    drawarrow(Drawable(ad), x_raw, dir_raw, arrow2)
+end
+
+function drawarrow(dw, x, dir, arrow)
     theta = atan(dir.y, dir.x)
     points = triangle(arrow.angle)
     points = translate(arrow.size .* rotate(points, theta), x)
     line(dw, points; closed = true, fillcolor = arrow.fillcolor)
 end
 
+# this arrows is sized in pixels
+function PlotKitAxes.draw(dw::Drawable, x, dir, arrow::TriangularArrow)
+    drawarrow(dw, x, dir, arrow)
+end
 Arrow(args...; kw...) = TriangularArrow(args...; kw...)
 
 
