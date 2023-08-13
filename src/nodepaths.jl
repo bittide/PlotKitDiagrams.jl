@@ -19,7 +19,7 @@ using LinearAlgebra
 using Cairo
 using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent
 
-export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, StraightPath, TriangularArrow
+export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow
 
 
 ##############################################################################
@@ -228,6 +228,9 @@ The angle between a and b is 2t.
 triangle(t) = Point[ (-cos(t), sin(t)), (0,0), (-cos(t), -sin(t))]
 
 
+oblong(w, h) = Point[(0,0), (w,0), (w,h), (0,h)]
+
+
 """
     rotate(p, theta)
 
@@ -260,6 +263,14 @@ Base.@kwdef mutable struct TriangularArrow <: Arrow
     scaletype = :x
 end
 
+Base.@kwdef mutable struct ShapedArrow <: Arrow
+    size = nothing
+    points = translate(oblong(1,1), Point(-0.5, -0.5))
+    fillcolor = Color(:black)
+    linestyle = nothing
+    scaletype = :x
+end
+
 # arrows are sized in axis units
 # x, dir are in axis units too
 function PlotKitAxes.draw(ad::AxisDrawable, x, dir, arrow::TriangularArrow)
@@ -282,6 +293,13 @@ end
 function PlotKitAxes.draw(dw::Drawable, x, dir, arrow::TriangularArrow)
     drawarrow(dw, x, dir, arrow)
 end
+
+function PlotKitAxes.draw(dw::Drawable, x, dir, arrow::ShapedArrow)
+    theta = atan(dir.y, dir.x)
+    points = translate(arrow.size .* rotate(arrow.points, theta), x)
+    line(dw, points; closed = true, fillcolor = arrow.fillcolor, linestyle = arrow.linestyle)
+end
+
 Arrow(args...; kw...) = TriangularArrow(args...; kw...)
 
 
