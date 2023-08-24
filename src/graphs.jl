@@ -15,7 +15,7 @@
 module Graphs
 
 using ..NodePaths: Node, Path
-using ..PlotKitAxes: AxisDrawable, Point, draw, drawaxis, drawbackground, setoptions!
+using ..PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, Point, draw, drawaxis, drawbackground, setoptions!
 
 export Graph, drawgraph
 
@@ -26,54 +26,56 @@ getentry(a::Array, i) = a[i]
 Base.@kwdef mutable struct Graph
     nodes = Node()
     paths = Path()
+    links = []
+    x = []
+    axis = nothing
 end
 
-function drawgraph(ad::AxisDrawable, links, x, st)
-    for (j, (src,dst)) in enumerate(links)
-        path = getentry(st.paths, j)
-        path.points = [x[src], x[dst]]
+function PlotKitAxes.draw(ad::AxisDrawable, gr::Graph)
+    for (j, (src,dst)) in enumerate(gr.links)
+        path = getentry(gr.paths, j)
+        path.points = [gr.x[src], gr.x[dst]]
         draw(ad, path)
     end
-    for i=1:length(x)
-        node = getentry(st.nodes, i)
-        node.center = x[i]
+    for i=1:length(gr.x)
+        node = getentry(gr.nodes, i)
+        node.center = gr.x[i]
         draw(ad, node)
     end
 end
-makelist(a::Vector) = a
-makelist(a) = [a]
 
-function drawgraph(links, x; kwargs...)
+#makelist(a::Vector) = a
+#makelist(a) = [a]
+
+graph_axis_defaults() = Dict(
+    :axisstyle_drawaxisbackground => false,
+    :axisstyle_drawxlabels => false,
+    :axisstyle_drawylabels => false,
+    :widthfromdata => 60,
+    :heightfromdata => 60,
+    :lmargin => 0,
+    :rmargin => 0,
+    :tmargin => 0,
+    :bmargin => 0,
+    :axisstyle_fontsize => 3,
+    :xdatamargin => 0.25,
+    :ydatamargin => 0.25
+)
+
+
+function Graph(links, x; kwargs...)
     graph = Graph()
     setoptions!(graph, "graph_", kwargs...)
-    for a in makelist(graph.nodes)
-        if isnothing(a.radius)
-            a.radius = 0.15
-        end
-        if isnothing(a.fontsize)
-            a.fontsize = 0.1
-        end
-    end
-    
-    
-    defaults = Dict(
-        :axisstyle_drawaxisbackground => false,
-        :axisstyle_drawxlabels => false,
-        :axisstyle_drawylabels => false,
-        :widthfromdata => 60,
-        :heightfromdata => 60,
-        :lmargin => 0,
-        :rmargin => 0,
-        :tmargin => 0,
-        :bmargin => 0,
-        :axisstyle_fontsize => 3,
-        :xdatamargin => 0.25,
-        :ydatamargin => 0.25
-    )
+    graph.axis = Axis(x; merge(graph_axis_defaults(), kwargs)...)
+    graph.links = links
+    graph.x = x
+    return graph
+end
 
-    ad = AxisDrawable(x; merge(defaults, kwargs)...)
+function PlotKitAxes.draw(gr::Graph)
+    ad = AxisDrawable(gr.axis)
     drawaxis(ad)
-    drawgraph(ad, links, x, graph)
+    draw(ad, gr)
     return ad
 end
 

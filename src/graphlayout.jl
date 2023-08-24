@@ -66,7 +66,7 @@ function graphlayout(links, n, adjacent_nodes, B,
     x0 = [v1 v2]'*size(B,1)
     f = x -> energy2(x, links, n, adjacent_nodes, f_adj, f_nonadj)
     df = x -> gradenergy(x, links, n, adjacent_nodes, f_adj_grad, f_nonadj_grad)
-    x = gradientalg(f, df, 1800, x0)
+    x = gradientalg(f, df, 2800, x0)
     z = Point[(a[1],a[2]) for a in eachcol(x0)]
     return z
 end
