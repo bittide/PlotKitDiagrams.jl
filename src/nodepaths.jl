@@ -17,7 +17,7 @@ module NodePaths
 
 using LinearAlgebra
 using Cairo
-using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent
+using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent, smallest_box_containing_data
 
 export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow
 
@@ -33,6 +33,8 @@ Base.@kwdef mutable struct StraightPath <: Path
     arrows = ()
     nodes = ()
     linestyle = LineStyle(Color(:black), 1)
+    fillcolor = nothing
+    closed = false
     points = Point[]
 end
 
@@ -94,8 +96,9 @@ function findpointonline(p, alpha)
     return x, dir
 end
 
+bounding_box(path::StraightPath) = smallest_box_containing_data(path.points)
 function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
-    line(dw, path.points; linestyle = path.linestyle)
+    line(dw, path.points; linestyle = path.linestyle, fillcolor = path.fillcolor, closed = path.closed)
     for (alpha, node) in path.nodes
         x, dir = findpointonline(path.points, alpha)
         node.center = x

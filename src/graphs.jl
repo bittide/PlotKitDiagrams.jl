@@ -14,8 +14,9 @@
 
 module Graphs
 
-using ..NodePaths: Node, Path
+using ..NodePaths: Node, Path, bounding_box
 using ..PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, Point, draw, drawaxis, drawbackground, setoptions!
+using ..PlotKitCairo: corners
 
 export Graph, drawgraph
 
@@ -24,6 +25,7 @@ getentry(a::Array, i) = a[i]
 
 # will depend on diagrams
 Base.@kwdef mutable struct Graph
+    extras = []
     nodes = Node()
     paths = Path()
     links = []
@@ -32,6 +34,9 @@ Base.@kwdef mutable struct Graph
 end
 
 function PlotKitAxes.draw(ad::AxisDrawable, gr::Graph)
+    for a in gr.extras
+        draw(ad, a)
+    end
     for (j, (src,dst)) in enumerate(gr.links)
         path = getentry(gr.paths, j)
         path.points = [gr.x[src], gr.x[dst]]
@@ -66,7 +71,8 @@ graph_axis_defaults() = Dict(
 function Graph(links, x; kwargs...)
     graph = Graph()
     setoptions!(graph, "graph_", kwargs...)
-    graph.axis = Axis(x; merge(graph_axis_defaults(), kwargs)...)
+    corns = vcat([corners(bounding_box(e)) for e in graph.extras]...)
+    graph.axis = Axis(Point[x ; corns]; merge(graph_axis_defaults(), kwargs)...)
     graph.links = links
     graph.x = x
     return graph
