@@ -31,6 +31,8 @@ Base.@kwdef mutable struct Graph
     links = []
     x = []
     axis = nothing
+    pathmap = (gr, s, d, xs, xd) -> [xs, xd]
+    nodemap = (gr, i, p) -> p
 end
 
 function PlotKitAxes.draw(ad::AxisDrawable, gr::Graph)
@@ -39,12 +41,12 @@ function PlotKitAxes.draw(ad::AxisDrawable, gr::Graph)
     end
     for (j, (src,dst)) in enumerate(gr.links)
         path = getentry(gr.paths, j)
-        path.points = [gr.x[src], gr.x[dst]]
+        path.points = gr.pathmap(gr, src, dst, gr.x[src], gr.x[dst])
         draw(ad, path)
     end
     for i=1:length(gr.x)
         node = getentry(gr.nodes, i)
-        node.center = gr.x[i]
+        node.center = gr.nodemap(gr, i, gr.x[i])
         draw(ad, node)
     end
 end

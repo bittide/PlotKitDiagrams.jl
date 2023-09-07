@@ -99,14 +99,14 @@ end
 bounding_box(path::StraightPath) = smallest_box_containing_data(path.points)
 function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
     line(dw, path.points; linestyle = path.linestyle, fillcolor = path.fillcolor, closed = path.closed)
+    for (alpha, arrow) in path.arrows
+        x, dir  = findpointonline(path.points, alpha)
+        draw(dw, x, dir, arrow)
+    end
     for (alpha, node) in path.nodes
         x, dir = findpointonline(path.points, alpha)
         node.center = x
         draw(dw, node)
-    end
-    for (alpha, arrow) in path.arrows
-        x, dir  = findpointonline(path.points, alpha)
-        draw(dw, x, dir, arrow)
     end
 end
 
@@ -195,7 +195,6 @@ end
 function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
     leftpx, toppx, txtwidthpx, txtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, node.text)
-    println((;leftpx, toppx, txtwidthpx, txtheightpx))
     if isnothing(node.widthheight)
         Wleft, Wtop, Wtxtwidthpx, Wtxtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, "W")
         w = (txtwidthpx + Wtxtwidthpx) / scalefactor
@@ -204,12 +203,10 @@ function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
         w = node.widthheight.x
         h = node.widthheight.y
     end
-    println((;w, h))
     T = [w 0 ; 0 h]
     points = Point[(1,0), (1,1), (0,1), (0,0)]
     points = centerx(points)
     points = [T*a + node.center for a in points]
-    println((;points,))
     line(ad, points; closed = true, linestyle = node.linestyle, fillcolor = node.fillcolor)
     text(ad, node.center, node.fontsize, node.textcolor, node.text;
          horizontal = "center", vertical = "center")
@@ -264,6 +261,7 @@ Base.@kwdef mutable struct TriangularArrow <: Arrow
     fillcolor = Color(:black)
     linestyle = nothing
     scaletype = :x
+    center = false
 end
 
 Base.@kwdef mutable struct ShapedArrow <: Arrow
@@ -281,13 +279,17 @@ function PlotKitAxes.draw(ad::AxisDrawable, x, dir, arrow::TriangularArrow)
     x_raw = ad.axis.ax(x)
     dir_raw = ad.axis.ax(dir) - ad.axis.ax(Point(0,0))
     scalefactor = getscalefactor(ad; scaletype = arrow.scaletype)
-    arrow2 = TriangularArrow(arrow.size * scalefactor, arrow.angle, arrow.fillcolor, arrow.linestyle, arrow.scaletype)
+    arrow2 = TriangularArrow(arrow.size * scalefactor, arrow.angle, arrow.fillcolor, arrow.linestyle, arrow.scaletype, arrow.center)
     drawarrow(Drawable(ad), x_raw, dir_raw, arrow2)
 end
 
 function drawarrow(dw, x, dir, arrow)
     theta = atan(dir.y, dir.x)
     points = triangle(arrow.angle)
+    if arrow.center
+        centroid = (1/3) *sum(points)
+        points = [a-centroid for a in points]
+    end
     points = translate(arrow.size .* rotate(points, theta), x)
     line(dw, points; closed = true, fillcolor = arrow.fillcolor)
 end

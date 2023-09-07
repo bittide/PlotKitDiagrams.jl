@@ -58,7 +58,7 @@ end
 
 function graphlayout(links, n, adjacent_nodes, B,
                      f_adj, f_adj_grad, 
-                     f_nonadj, f_nonadj_grad)
+                     f_nonadj, f_nonadj_grad; epochs = 2800)
     L = B*B'
     D, V = eigen(L)
     v1 = V[:,2]
@@ -66,7 +66,7 @@ function graphlayout(links, n, adjacent_nodes, B,
     x0 = [v1 v2]'*size(B,1)
     f = x -> energy2(x, links, n, adjacent_nodes, f_adj, f_nonadj)
     df = x -> gradenergy(x, links, n, adjacent_nodes, f_adj_grad, f_nonadj_grad)
-    x = gradientalg(f, df, 2800, x0)
+    x = gradientalg(f, df, epochs, x0)
     z = Point[(a[1],a[2]) for a in eachcol(x0)]
     return z
 end
@@ -132,16 +132,16 @@ end
 # todo. fix get_incidence so it returns
 # incidence for an oriented graph
 #
-function graphlayout(links, n)
-    f_adj = x -> (sqrt(x)-1)^2
-    f_adj_grad = x -> 1 - 1/sqrt(x)
-    f_nonadj = x -> 1/x
-    f_nonadj_grad = x -> -1/(x*x)
+function graphlayout(links, n; 
+                     f_adj = x -> (sqrt(x)-1)^2,
+                     f_adj_grad = x -> 1 - 1/sqrt(x),
+                     f_nonadj = x -> 1/x,
+                     f_nonadj_grad = x -> -1/(x*x), epochs = 2800)
     adjacent_nodes = get_adjacent_nodes(links, n)
     B = get_incidence(links, n)
     return graphlayout(links, n, adjacent_nodes, B,
                        f_adj, f_adj_grad, 
-                       f_nonadj, f_nonadj_grad)
+                       f_nonadj, f_nonadj_grad; epochs)
 end
 ##############################################################################
 
