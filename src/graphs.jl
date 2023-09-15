@@ -39,6 +39,7 @@ function PlotKitAxes.draw(ad::AxisDrawable, gr::Graph)
     for a in gr.extras
         draw(ad, a)
     end
+
     for (j, (src,dst)) in enumerate(gr.links)
         path = getentry(gr.paths, j)
         path.points = gr.pathmap(gr, src, dst, gr.x[src], gr.x[dst])
@@ -71,6 +72,7 @@ graph_axis_defaults() = Dict(
 
 
 function Graph(links, x; kwargs...)
+
     graph = Graph()
     setoptions!(graph, "graph_", kwargs...)
     corns = vcat([corners(bounding_box(e)) for e in graph.extras]...)
