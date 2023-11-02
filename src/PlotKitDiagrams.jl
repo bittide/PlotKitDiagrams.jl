@@ -29,6 +29,9 @@ using .Graphs
 include("graphlayout.jl")
 using .GraphLayout
 
+include("blockdiagrams.jl")
+using .BlockDiagrams
+
 ##############################################################################
 function reexport(m)
     for a in names(m)
@@ -39,6 +42,7 @@ end
 reexport(NodePaths)
 reexport(Graphs)
 reexport(GraphLayout)
+reexport(BlockDiagrams)
 
 
 

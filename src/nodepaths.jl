@@ -19,7 +19,7 @@ using LinearAlgebra
 using Cairo
 using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent, smallest_box_containing_data
 
-export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow
+export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow, east, north, south, west
 
 
 ##############################################################################
@@ -169,6 +169,17 @@ end
 
 
 Node(args...; kw...) = CircularNode(args...; kw...)
+
+
+north(r::RectangularNode) = r.center + Point(0, r.widthheight.y / 2)
+south(r::RectangularNode) = r.center - Point(0, r.widthheight.y / 2)
+west(r::RectangularNode) = r.center - Point(r.widthheight.x / 2, 0)
+east(r::RectangularNode) = r.center + Point(r.widthheight.x / 2, 0)
+
+north(c::CircularNode) = c.center + Point(0, c.radius)
+south(c::CircularNode) = c.center - Point(0, c.radius)
+west(c::CircularNode) = c.center - Point(c.radius, 0)
+east(c::CircularNode) = c.center + Point(c.radius, 0)
 
 
 ##############################################################################
