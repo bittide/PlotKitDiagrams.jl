@@ -39,7 +39,6 @@ function PlotKitAxes.draw(ad::AxisDrawable, gr::Graph)
     for a in gr.extras
         draw(ad, a)
     end
-
     for (j, (src,dst)) in enumerate(gr.links)
         path = getentry(gr.paths, j)
         path.points = gr.pathmap(gr, src, dst, gr.x[src], gr.x[dst])
