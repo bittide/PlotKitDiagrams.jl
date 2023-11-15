@@ -1,7 +1,7 @@
 
 module BlockDiagrams
 
-using ..NodePaths: CircularNode, NodePaths, RectangularNode, StraightPath
+using ..NodePaths: CircularNode, NodePaths, RectangularNode, StraightPath, TriangularArrow
 using ..PlotKitAxes: Axis, AxisDrawable, Box, Color, LineStyle, PlotKitAxes, Point, draw, drawbackground
 
 export BlockDiagram
