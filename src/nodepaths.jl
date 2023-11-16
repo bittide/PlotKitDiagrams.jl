@@ -148,6 +148,7 @@ abstract type Node end
 Base.@kwdef mutable struct CircularNode <: Node
     text = ""
     fontsize = nothing    # axis units
+    fontname = "Sans"
     textcolor = Color(:white)
     fillcolor = colormap(3)
     linestyle = LineStyle(Color(:black), 1)
@@ -159,6 +160,7 @@ end
 Base.@kwdef mutable struct RectangularNode <: Node
     text = ""
     fontsize = nothing   # units are axis units
+    fontname = "Sans"
     textcolor = Color(:white)
     fillcolor = colormap(3)  # can be nothing
     linestyle = LineStyle(Color(:black), 1)  # can be nothing
@@ -199,8 +201,8 @@ function PlotKitAxes.draw(ad::AxisDrawable, node::CircularNode)
     circle(ad, node.center, radius; scaletype = node.scaletype, 
            linestyle = node.linestyle, fillcolor = node.fillcolor)
     text(ad, node.center, fontsize, node.textcolor, node.text;
-         scaletype = node.scaletype, 
-         horizontal = "center", vertical = "center")
+         scaletype = node.scaletype,
+         fname = node.fontname, horizontal = "center", vertical = "center")
 end
 
 function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
@@ -220,7 +222,7 @@ function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
     points = [T*a + node.center for a in points]
     line(ad, points; closed = true, linestyle = node.linestyle, fillcolor = node.fillcolor)
     text(ad, node.center, node.fontsize, node.textcolor, node.text;
-         horizontal = "center", vertical = "center")
+         fname = node.fontname, horizontal = "center", vertical = "center")
 end
 
 
