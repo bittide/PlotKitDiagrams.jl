@@ -44,7 +44,7 @@ function BlockDiagram(;
                       ymax = 1,
                       kw...)
     defaults = blockdiagram_axis_defaults(xmin, xmax, ymin, ymax)
-    axis = Axis(Point[(xmin, ymin),(xmax, ymax)];  merge(defaults, kw)...)
+    axis = Axis(Box(xmin, xmax, ymin, ymax);  merge(defaults, kw)...)
     bd = BlockDiagram(fontsize, linestyle, fillcolor, arrow, xmin, xmax, ymin, ymax, axis)
     return bd
 end

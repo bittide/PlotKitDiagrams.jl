@@ -15,7 +15,7 @@
 module Graphs
 
 using ..NodePaths: Node, Path, bounding_box
-using ..PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, Point, draw, drawaxis, drawbackground, setoptions!
+using ..PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, Point, PointList, draw, drawaxis, drawbackground, input, setoptions!
 using ..PlotKitCairo: corners
 
 export Graph, drawgraph
@@ -71,11 +71,11 @@ graph_axis_defaults() = Dict(
 
 
 function Graph(links, x; kwargs...)
-
     graph = Graph()
     setoptions!(graph, "graph_", kwargs...)
     corns = vcat([corners(bounding_box(e)) for e in graph.extras]...)
-    graph.axis = Axis(Point[x ; corns]; merge(graph_axis_defaults(), kwargs)...)
+    graph.axis = Axis(PointList(Point[x ; corns]);
+                                merge(graph_axis_defaults(), kwargs)...)
     graph.links = links
     graph.x = x
     return graph

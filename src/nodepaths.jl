@@ -17,7 +17,7 @@ module NodePaths
 
 using LinearAlgebra
 using Cairo
-using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent, smallest_box_containing_data
+using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, PointList, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent, smallest_box_containing_data
 
 export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow, east, north, south, west
 
@@ -96,7 +96,7 @@ function findpointonline(p, alpha)
     return x, dir
 end
 
-bounding_box(path::StraightPath) = smallest_box_containing_data(path.points)
+bounding_box(path::StraightPath) = smallest_box_containing_data(PointList(path.points))
 function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
     line(dw, path.points; linestyle = path.linestyle, fillcolor = path.fillcolor, closed = path.closed)
     for (alpha, arrow) in path.arrows
@@ -207,9 +207,9 @@ end
 
 function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
-    leftpx, toppx, txtwidthpx, txtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, node.text)
+    leftpx, toppx, txtwidthpx, txtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, node.fontname, node.text)
     if isnothing(node.widthheight)
-        Wleft, Wtop, Wtxtwidthpx, Wtxtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, "W")
+        Wleft, Wtop, Wtxtwidthpx, Wtxtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, node.fontname, "W")
         w = (txtwidthpx + Wtxtwidthpx) / scalefactor
         h = (txtheightpx + Wtxtheightpx / 2) / scalefactor
     else
