@@ -3,7 +3,7 @@ plotpath(x) = joinpath(ENV["HOME"], "plots/", x)
 
 
 function main()
-    @testset "PlotKitGL" begin
+    @testset "PlotKitDiagrams" begin
         @test main1()
         @test main2()
         @test main3()
@@ -19,7 +19,7 @@ function main1()
     println("main1")
     links = [[1, 2], [1, 4], [2, 3], [2, 5], [3, 6], [4, 5], [5, 6]]
     x = Point[(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1)]
-    ad = drawgraph(links, x; graph_nodes = Node(;fillcolor=Color(:red)))
+    ad = draw(Graph(links, x; graph_nodes = Node(;fillcolor=Color(:red))))
     save(ad, plotpath("test_plotkitdiagrams_1.pdf"))
     return true
 end
@@ -30,7 +30,7 @@ function main2()
     links = [[1, 2], [1, 4], [2, 3], [2, 5], [3, 6], [4, 5], [5, 6]]
     x = Point[(0, -2), (1, 0), (2, -2), (0, 1), (1, 1), (2, 1)]
     arrows=((0.5, TriangularArrow(; size = 0.15)),)
-    ad = drawgraph(links, x; graph_paths = Path(; arrows))
+    ad = draw(Graph(links, x; graph_paths = Path(; arrows)))
     save(ad, plotpath("test_plotkitdiagrams_2.pdf"))
     return true
 end
@@ -42,8 +42,8 @@ function main3()
     links = [[1, 2], [2,1], [1, 4], [2, 3], [2, 5], [5,2], [3, 2], [4, 5], [5, 6]]
     x = Point[(0, -2), (1, -0.5), (2, -2), (0, 1), (1, 1), (2, 1)]
     arrows=((0.5, TriangularArrow(; size = 0.15)),)
-    ad = drawgraph(links, x; lmargin=20,
-                  graph_paths = CurvedPath(; arrows))
+    ad = draw(Graph(links, x; lmargin=20,
+                  graph_paths = CurvedPath(; arrows)))
     save(ad, plotpath("test_plotkitdiagrams_3.pdf"))
     return true
 end
@@ -55,7 +55,7 @@ function main4()
     println("main4")
     links = [[1, 2], [1, 4], [2, 3], [2, 5], [3, 6], [4, 5], [5, 6]]
     x = graphlayout(links, 6)
-    ad = drawgraph(links, x)
+    ad = draw(Graph(links, x))
     save(ad, plotpath("test_plotkitdiagrams_4.pdf"))
     return true
 end
@@ -80,7 +80,7 @@ function main5()
     
     graph_paths = [Path(; arrows, nodes = (node(i),)) for i=1:m]
 
-    ad = drawgraph(links, x; graph_nodes, graph_paths)
+    ad = draw(Graph(links, x; graph_nodes, graph_paths))
     save(ad, plotpath("test_plotkitdiagrams_5.pdf"))
     return true
 end   
@@ -88,7 +88,7 @@ end
 # arrows on non-equal axes
 function main6()
     println("main6")
-    ad = AxisDrawable(Point[(0,0),(20,3)])
+    ad = AxisDrawable(Box(0,20,0,3))
     drawaxis(ad)
     setclipbox(ad)
     line(ad, Point(0,0), Point(10,2); linestyle = LineStyle(Color(:red), 1))
@@ -102,8 +102,8 @@ end
 # arrows on non-equal axes
 function main7()
     println("main7")
-    ad = AxisDrawable(Point[(0,0),(20,3)];
-                      axisoptions_yoriginatbottom = false, axisstyle_xtickverticaloffset = -10)
+    ad = AxisDrawable(Box(0,20,0,3);
+                      axisoptions_yoriginatbottom = false)
     drawaxis(ad)
     setclipbox(ad)
     line(ad, Point(0,0), Point(10,2); linestyle = LineStyle(Color(:red), 1))

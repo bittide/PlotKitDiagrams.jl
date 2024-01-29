@@ -18,7 +18,7 @@ using ..NodePaths: Node, Path, bounding_box
 using ..PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, Point, PointList, draw, drawaxis, drawbackground, input, setoptions!
 using ..PlotKitCairo: corners
 
-export Graph, drawgraph
+export Graph
 
 getentry(a, i) = a
 getentry(a::Array, i) = a[i]
