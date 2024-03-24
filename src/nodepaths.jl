@@ -17,9 +17,9 @@ module NodePaths
 
 using LinearAlgebra
 using Cairo
-using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, PointList, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent, smallest_box_containing_data
+using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, PointList, allowed_kws, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent, smallest_box_containing_data
 
-export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow, east, north, south, west
+export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow, arrow, east, north, south, west
 
 
 ##############################################################################
@@ -319,6 +319,13 @@ function PlotKitAxes.draw(dw::Drawable, x, dir, arrow::ShapedArrow)
 end
 
 Arrow(args...; kw...) = TriangularArrow(args...; kw...)
+
+function arrow(points::Array; linestyle = LineStyle(Color(:black), 1),
+               fillcolor = Color(:black), size = 8, kw...)
+    arrows = ((1, TriangularArrow(; size, fillcolor, allowed_kws(TriangularArrow, kw)...)),)
+    p = Path(; arrows, points, linestyle)
+    return p
+end
 
 
 
