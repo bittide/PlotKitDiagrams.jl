@@ -30,7 +30,7 @@ function gradientalg(f, df, epochs, x0)
     newrisk = 0.0
     for k = 1:epochs
         g = df(theta)
-       # g2 = gradient(f, theta)[1]
+        # g2 = gradient(f, theta)[1]
         #println(" g  = ")
         #display(round.(g, digits=2))
         #println(" g2 = ")
@@ -40,6 +40,10 @@ function gradientalg(f, df, epochs, x0)
             dtheta = eta * g
             theta .-= dtheta
             newrisk = f(theta)
+            if isnan(sum(abs.(dtheta)))
+                return theta
+            end
+
             if newrisk <= oldrisk
                 eta = 1.2 * eta
                 break
