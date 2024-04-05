@@ -18,7 +18,7 @@ module PlotKitDiagrams
 ##############################################################################
 # submodules
 
-using PlotKitAxes
+
 
 include("nodepaths.jl")
 using .NodePaths

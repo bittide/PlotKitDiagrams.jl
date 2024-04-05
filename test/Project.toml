@@ -2,4 +2,5 @@
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 PlotKitDiagrams = "64f37de4-b5f6-47b0-be42-d75bd846556a"
 PlotKitAxes = "d206e830-6474-4927-8e6c-338e8092c5c7"
+PlotKitCairo = "7ee0c3d4-a3be-4a4f-8af9-251da1807123"
 

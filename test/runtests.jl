@@ -10,6 +10,7 @@
 #
 module TestSet
 
+using PlotKitCairo
 using PlotKitAxes
 using PlotKitDiagrams
 

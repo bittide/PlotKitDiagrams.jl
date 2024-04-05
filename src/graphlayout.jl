@@ -15,7 +15,8 @@
 
 module GraphLayout
 
-using ..PlotKitAxes: Point
+
+using PlotKitCairo: Point 
 using LinearAlgebra
 
 export graphlayout, meshlayout

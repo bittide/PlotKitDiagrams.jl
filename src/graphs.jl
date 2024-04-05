@@ -14,9 +14,11 @@
 
 module Graphs
 
+using PlotKitCairo: Point, PlotKitCairo, corners, draw
+using PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, PointList, drawaxis, drawbackground, input, setoptions!
+
 using ..NodePaths: Node, Path, bounding_box
-using ..PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, Point, PointList, draw, drawaxis, drawbackground, input, setoptions!
-using ..PlotKitCairo: corners
+
 
 export Graph
 
@@ -35,7 +37,7 @@ Base.@kwdef mutable struct Graph
     nodemap = (gr, i, p) -> p
 end
 
-function PlotKitAxes.draw(ad::AxisDrawable, gr::Graph)
+function PlotKitCairo.draw(ad::AxisDrawable, gr::Graph)
     for a in gr.extras
         draw(ad, a)
     end
@@ -81,7 +83,7 @@ function Graph(links, x; kwargs...)
     return graph
 end
 
-function PlotKitAxes.draw(gr::Graph)
+function PlotKitCairo.draw(gr::Graph)
     ad = AxisDrawable(gr.axis)
     drawaxis(ad)
     draw(ad, gr)

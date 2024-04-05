@@ -17,7 +17,10 @@ module NodePaths
 
 using LinearAlgebra
 using Cairo
-using ..PlotKitAxes: AxisDrawable, AxisMap, Bezier, Color, Drawable, LineStyle, PlotKitAxes, Point, PointList, allowed_kws, colormap, curve, draw, get_text_info, getscalefactor, interp, line, point, point_and_tangent, smallest_box_containing_data
+
+using PlotKitCairo: Bezier, Color, Drawable, Point, LineStyle, PlotKitCairo, colormap, curve, draw,   get_text_info, interp, line, point, point_and_tangent
+
+using PlotKitAxes: AxisDrawable, AxisMap,  PlotKitAxes, PointList, allowed_kws,  getscalefactor,  smallest_box_containing_data
 
 export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow, arrow, east, north, south, west
 
@@ -97,7 +100,7 @@ function findpointonline(p, alpha)
 end
 
 bounding_box(path::StraightPath) = smallest_box_containing_data(PointList(path.points))
-function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
+function PlotKitCairo.draw(dw::Drawable, path::StraightPath)
     line(dw, path.points; linestyle = path.linestyle, fillcolor = path.fillcolor, closed = path.closed)
     for (alpha, arrow) in path.arrows
         x, dir  = findpointonline(path.points, alpha)
@@ -110,7 +113,7 @@ function PlotKitAxes.draw(dw::Drawable, path::StraightPath)
     end
 end
 
-function PlotKitAxes.draw(dw, path::CurvedPath)
+function PlotKitCairo.draw(dw, path::CurvedPath)
     bezier = Bezier(path.points[1], path.points[2], path.theta1, path.theta2, path.curveparam)
     curve(dw, bezier; closed = path.closed, linestyle = path.linestyle, fillcolor = path.fillcolor)
     for (alpha, node) in path.nodes
@@ -123,7 +126,7 @@ function PlotKitAxes.draw(dw, path::CurvedPath)
     end
 end
 
-function PlotKitAxes.draw(dw, path::BezierPath)
+function PlotKitCairo.draw(dw, path::BezierPath)
     curve(dw, path.points...;
           closed = path.closed, linestyle = path.linestyle,
           fillcolor = path.fillcolor)
@@ -186,7 +189,7 @@ east(c::CircularNode) = c.center + Point(c.radius, 0)
 
 ##############################################################################
 
-function PlotKitAxes.draw(ad::AxisDrawable, node::CircularNode)
+function PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
     if isnothing(node.radius)
         radius = 9 / scalefactor  # aim for 9 pixel radius
@@ -205,7 +208,7 @@ function PlotKitAxes.draw(ad::AxisDrawable, node::CircularNode)
          fname = node.fontname, horizontal = "center", vertical = "center")
 end
 
-function PlotKitAxes.draw(ad::AxisDrawable, node::RectangularNode)
+function PlotKitCairo.draw(ad::AxisDrawable, node::RectangularNode)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
     leftpx, toppx, txtwidthpx, txtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, node.fontname, node.text)
     if isnothing(node.widthheight)
@@ -287,7 +290,7 @@ end
 
 # arrows are sized in axis units
 # x, dir are in axis units too
-function PlotKitAxes.draw(ad::AxisDrawable, x, dir, arrow::TriangularArrow)
+function PlotKitCairo.draw(ad::AxisDrawable, x, dir, arrow::TriangularArrow)
     # convert to pixels
     x_raw = ad.axis.ax(x)
     dir_raw = ad.axis.ax(dir) - ad.axis.ax(Point(0,0))
@@ -308,11 +311,11 @@ function drawarrow(dw, x, dir, arrow)
 end
 
 # this arrows is sized in pixels
-function PlotKitAxes.draw(dw::Drawable, x, dir, arrow::TriangularArrow)
+function PlotKitCairo.draw(dw::Drawable, x, dir, arrow::TriangularArrow)
     drawarrow(dw, x, dir, arrow)
 end
 
-function PlotKitAxes.draw(dw::Drawable, x, dir, arrow::ShapedArrow)
+function PlotKitCairo.draw(dw::Drawable, x, dir, arrow::ShapedArrow)
     theta = atan(dir.y, dir.x)
     points = translate(arrow.size .* rotate(arrow.points, theta), x)
     line(dw, points; closed = true, fillcolor = arrow.fillcolor, linestyle = arrow.linestyle)

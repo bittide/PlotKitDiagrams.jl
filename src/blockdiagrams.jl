@@ -1,8 +1,11 @@
 
 module BlockDiagrams
 
+using PlotKitCairo: Box, Color, LineStyle, PlotKitCairo, Point, draw
+using PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, drawaxis, drawbackground
+
 using ..NodePaths: CircularNode, NodePaths, RectangularNode, StraightPath, TriangularArrow
-using ..PlotKitAxes: Axis, AxisDrawable, Box, Color, LineStyle, PlotKitAxes, Point, draw, drawaxis, drawbackground
+
 
 export BlockDiagram
 
@@ -67,7 +70,7 @@ NodePaths.StraightPath(bd::BlockDiagram, points) = StraightPath(; arrows = ((1, 
                                                    points)
 
 
-function PlotKitAxes.draw(bd::BlockDiagram, arest...)
+function PlotKitCairo.draw(bd::BlockDiagram, arest...)
     ad = AxisDrawable(bd.axis)
     drawaxis(ad)
     for x in arest
