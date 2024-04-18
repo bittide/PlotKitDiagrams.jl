@@ -108,6 +108,14 @@ function PlotKitCairo.draw(dw::Drawable, path::StraightPath)
     end
     for (alpha, node) in path.nodes
         x, dir = findpointonline(path.points, alpha)
+        # u = normalize(dir)
+        # uperp = Point(-u.y, u.x)
+        # XXX How should the position/offset be stored
+        # maybe alpha should have a type
+        # or have an object that stores both alpha and node/arrow
+        # Given x, dir. Maybe a function (x,dir) -> point
+        # Or maybe let the draw_node do the work, by setting node.dir also.
+        # Set node.dir also, and 
         node.center = x
         draw(dw, node)
     end
