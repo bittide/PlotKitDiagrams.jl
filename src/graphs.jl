@@ -60,6 +60,7 @@ graph_axis_defaults() = Dict(
     :axisstyle_drawaxisbackground => false,
     :axisstyle_drawxlabels => false,
     :axisstyle_drawylabels => false,
+    :tight => true,
     :widthfromdata => 60,
     :heightfromdata => 60,
     :lmargin => 0,
@@ -76,10 +77,6 @@ function Graph(links, x; kwargs...)
     graph = Graph()
     setoptions!(graph, "graph_", kwargs...)
     corns = vcat([corners(bounding_box(e)) for e in graph.extras]...)
-
-    # this isn't the right way to set the axis limits
-    # since we don't care whether the numbers are nice
-    # instead we should set it to be a fixed amount
     graph.axis = Axis(PointList(Point[x ; corns]);
                                 merge(graph_axis_defaults(), kwargs)...)
     graph.links = links
