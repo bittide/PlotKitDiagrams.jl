@@ -100,6 +100,8 @@ function findpointonline(p, alpha)
 end
 
 bounding_box(path::StraightPath) = smallest_box_containing_data(PointList(path.points))
+
+
 function PlotKitCairo.draw(dw::Drawable, path::StraightPath)
     line(dw, path.points; linestyle = path.linestyle, fillcolor = path.fillcolor, closed = path.closed)
     for (alpha, arrow) in path.arrows
@@ -116,8 +118,8 @@ function PlotKitCairo.draw(dw::Drawable, path::StraightPath)
         # Given x, dir. Maybe a function (x,dir) -> point
         # Or maybe let the draw_node do the work, by setting node.dir also.
         # Set node.dir also, and 
-        node.center = x
-        draw(dw, node)
+        #node.center = x
+        draw(dw, node, x, dir)
     end
 end
 
@@ -125,8 +127,10 @@ function PlotKitCairo.draw(dw, path::CurvedPath)
     bezier = Bezier(path.points[1], path.points[2], path.theta1, path.theta2, path.curveparam)
     curve(dw, bezier; closed = path.closed, linestyle = path.linestyle, fillcolor = path.fillcolor)
     for (alpha, node) in path.nodes
-        node.center = point(bezier, alpha)
-        draw(dw, node)
+        #node.center = point(bezier, alpha)
+        #draw(dw, node)
+        x, dir = point_and_tangent(bezier, alpha)
+        draw(dw, node, x, dir)
     end
    for (alpha, arrow) in path.arrows
        x, dir = point_and_tangent(bezier, alpha)
@@ -165,7 +169,8 @@ Base.@kwdef mutable struct CircularNode <: Node
     linestyle = LineStyle(Color(:black), 1)
     radius = nothing # axis units
     scaletype = :x
-    center = nothing
+    offset = nothing
+    #center = nothing
 end
 
 Base.@kwdef mutable struct RectangularNode <: Node
@@ -176,7 +181,8 @@ Base.@kwdef mutable struct RectangularNode <: Node
     fillcolor = colormap(3)  # can be nothing
     linestyle = LineStyle(Color(:black), 1)  # can be nothing
     scaletype = :x
-    center = nothing  
+    offset = nothing
+    #    center = nothing  
     widthheight = nothing
 end
 
@@ -197,7 +203,7 @@ east(c::CircularNode) = c.center + Point(c.radius, 0)
 
 ##############################################################################
 
-function PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode)
+function PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode, x, dir)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
     if isnothing(node.radius)
         radius = 9 / scalefactor  # aim for 9 pixel radius
@@ -209,14 +215,23 @@ function PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode)
     else
         fontsize = node.fontsize
     end
-    circle(ad, node.center, radius; scaletype = node.scaletype, 
+    if isnothing(node.offset)
+        pos = x
+    else
+        udir = dir/norm(dir)
+        uperp = Point(-udir.y, udir.x)
+        pos = x + node.offset.x * udir + node.offset.y * uperp
+    end
+        
+    circle(ad, pos, radius; scaletype = node.scaletype, 
            linestyle = node.linestyle, fillcolor = node.fillcolor)
-    text(ad, node.center, fontsize, node.textcolor, node.text;
+
+    text(ad, pos, fontsize, node.textcolor, node.text;
          scaletype = node.scaletype,
          fname = node.fontname, horizontal = "center", vertical = "center")
 end
 
-function PlotKitCairo.draw(ad::AxisDrawable, node::RectangularNode)
+function PlotKitCairo.draw(ad::AxisDrawable, node::RectangularNode, x, dir)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
     leftpx, toppx, txtwidthpx, txtheightpx = get_text_info(ad.ctx, node.fontsize * scalefactor, node.fontname, node.text)
     if isnothing(node.widthheight)
@@ -227,12 +242,22 @@ function PlotKitCairo.draw(ad::AxisDrawable, node::RectangularNode)
         w = node.widthheight.x
         h = node.widthheight.y
     end
+
+    if isnothing(node.offset)
+        pos = x
+    else
+        udir = dir/norm(dir)
+        uperp = Point(-udir.y, udir.x)
+        pos = x + node.offset.x * udir + node.offset.y * uperp
+    end
+   
     T = [w 0 ; 0 h]
     points = Point[(1,0), (1,1), (0,1), (0,0)]
     points = centerx(points)
-    points = [T*a + node.center for a in points]
+    points = [T*a + pos for a in points]
+
     line(ad, points; closed = true, linestyle = node.linestyle, fillcolor = node.fillcolor)
-    text(ad, node.center, node.fontsize, node.textcolor, node.text;
+    text(ad, pos, node.fontsize, node.textcolor, node.text;
          fname = node.fontname, horizontal = "center", vertical = "center")
 end
 

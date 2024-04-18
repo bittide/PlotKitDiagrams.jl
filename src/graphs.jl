@@ -48,8 +48,9 @@ function PlotKitCairo.draw(ad::AxisDrawable, gr::Graph)
     end
     for i=1:length(gr.x)
         node = getentry(gr.nodes, i)
-        node.center = gr.nodemap(gr, i, gr.x[i])
-        draw(ad, node)
+        pos = gr.nodemap(gr, i, gr.x[i])
+        dir = Point(1,0) 
+        draw(ad, node, pos, dir)
     end
 end
 
