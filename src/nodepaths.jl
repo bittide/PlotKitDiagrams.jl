@@ -18,7 +18,7 @@ module NodePaths
 using LinearAlgebra
 using Cairo
 
-using PlotKitCairo: Bezier, Color, Drawable, Point, PointList, LineStyle, PlotKitCairo, colormap, curve, draw,   get_text_info, interp, line, point, point_and_tangent, smallest_box_containing_data
+using PlotKitCairo: Bezier, Color, Drawable, Point, PointList, LineStyle, PlotKitCairo, allowed_kws, colormap, curve, draw,   get_text_info, interp, line, point, point_and_tangent, smallest_box_containing_data
 
 using PlotKitAxes: AxisDrawable, AxisMap,  PlotKitAxes, getscalefactor
 
@@ -202,6 +202,8 @@ east(c::CircularNode) = c.center + Point(c.radius, 0)
 
 
 ##############################################################################
+
+PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode, x) = draw(ad, node, x, Point(1,0))
 
 function PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode, x, dir)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
