@@ -18,9 +18,9 @@ module NodePaths
 using LinearAlgebra
 using Cairo
 
-using PlotKitCairo: Bezier, Color, Drawable, Point, LineStyle, PlotKitCairo, colormap, curve, draw,   get_text_info, interp, line, point, point_and_tangent
+using PlotKitCairo: Bezier, Color, Drawable, Point, PointList, LineStyle, PlotKitCairo, colormap, curve, draw,   get_text_info, interp, line, point, point_and_tangent, smallest_box_containing_data
 
-using PlotKitAxes: AxisDrawable, AxisMap,  PlotKitAxes, PointList, allowed_kws,  getscalefactor,  smallest_box_containing_data
+using PlotKitAxes: AxisDrawable, AxisMap,  PlotKitAxes, getscalefactor
 
 export BezierPath, CircularNode, CurvedPath, Node, Path, RectangularNode, ShapedArrow, StraightPath, TriangularArrow, arrow, east, north, south, west
 

@@ -14,8 +14,8 @@
 
 module Graphs
 
-using PlotKitCairo: Point, PlotKitCairo, corners, draw
-using PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, PointList, drawaxis, drawbackground, input, setoptions!
+using PlotKitCairo: Point, PlotKitCairo, PointList, corners, draw, input, setoptions!
+using PlotKitAxes: Axis, AxisDrawable, PlotKitAxes, drawaxis, drawbackground
 
 using ..NodePaths: Node, Path, bounding_box
 
