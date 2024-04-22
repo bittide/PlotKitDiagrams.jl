@@ -170,7 +170,7 @@ Base.@kwdef mutable struct CircularNode <: Node
     radius = nothing # axis units
     scaletype = :x
     offset = nothing
-    #center = nothing
+    center = nothing
 end
 
 Base.@kwdef mutable struct RectangularNode <: Node
@@ -182,7 +182,7 @@ Base.@kwdef mutable struct RectangularNode <: Node
     linestyle = LineStyle(Color(:black), 1)  # can be nothing
     scaletype = :x
     offset = nothing
-    #    center = nothing  
+    center = nothing  
     widthheight = nothing
 end
 
@@ -204,6 +204,7 @@ east(c::CircularNode) = c.center + Point(c.radius, 0)
 ##############################################################################
 
 PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode, x) = draw(ad, node, x, Point(1,0))
+PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode) = draw(ad, node, node.center, Point(1,0))
 
 function PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode, x, dir)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
@@ -232,6 +233,9 @@ function PlotKitCairo.draw(ad::AxisDrawable, node::CircularNode, x, dir)
          scaletype = node.scaletype,
          fname = node.fontname, horizontal = "center", vertical = "center")
 end
+
+PlotKitCairo.draw(ad::AxisDrawable, node::RectangularNode, x) = draw(ad, node, x, Point(1,0))
+PlotKitCairo.draw(ad::AxisDrawable, node::RectangularNode) = draw(ad, node, node.center, Point(1,0))
 
 function PlotKitCairo.draw(ad::AxisDrawable, node::RectangularNode, x, dir)
     scalefactor = getscalefactor(ad; scaletype = node.scaletype)
